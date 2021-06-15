@@ -1,0 +1,40 @@
+{
+  "one_time": false,
+  "buttons": [
+    [{
+      "action": {
+      "type": "text",
+      "label": "Как жизнь?"
+      },
+      "color": "default"
+    }],
+    [{
+      "action": {
+      "type": "text",
+      "label": "Го по пиву?"
+      },
+      "color": "default"
+    }],
+      [{
+        "action": {
+        "type": "text",
+        "label": "Страница 1"
+        },
+        "color": "default"
+      },
+      {
+        "action": {
+        "type": "text",
+        "label": "Страница 3"
+        },
+        "color": "default"
+      },
+      {
+        "action": {
+        "type": "text",
+        "label": "Назад"
+        },
+        "color": "default"
+      }]
+  ]
+}

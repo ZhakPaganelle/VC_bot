@@ -4,23 +4,23 @@
     [{
       "action": {
       "type": "text",
-      "label": "Квест"
+      "label": "Следующее задание"
       },
       "color": "default"
     }],
     [{
       "action": {
       "type": "text",
-      "label": "Задать вопросы"
+      "label": "Баллы"
       },
       "color": "default"
     }],
-    [{
-      "action": {
-      "type": "text",
-      "label": "Поговорить с человеком"
-      },
-      "color": "default"
-    }]
+      [{
+        "action": {
+        "type": "text",
+        "label": "Назад"
+        },
+        "color": "default"
+      }]
   ]
 }
