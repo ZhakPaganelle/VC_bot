@@ -11,7 +11,7 @@ longpoll = VkLongPoll(vk)
 
 users = pandas.read_csv('users.csv', index_col='user_id')
 # DB structure: user_id, bot_answers, score, step, way
-questions = [2]
+questions = {'Как жизнь?': ')', 'Го по пиву?': 'Го!'}
 
 print(users)
 
@@ -57,7 +57,7 @@ for event in longpoll.listen():
             users = check_user(event.user_id)
             request = event.text
 
-            if request == 'Меню':  # Calls usual menu
+            if request in ('Меню', 'Назад', 'Привет'):  # Calls usual menu
                 change_user_data(event.user_id, 'bot_answers', 1)
                 write_msg(event.user_id, 'Чего изволите?', 'default.json')
 
@@ -66,7 +66,16 @@ for event in longpoll.listen():
                 write_msg(event.user_id, 'Мы ответим КТТС', 'menu_call.json')
 
             elif request in questions:  # For Ruslan
-                write_msg(event.user_id, 'Та не ебу я', 'menu_call.json')
+                write_msg(event.user_id, questions[request], 'questions.json')
 
             elif get_user_data(event.user_id, 'bot_answers'):  # Usual response
-                write_msg(event.user_id, f'Иди на хуй со своим "{request}", сука!', 'default.json')
+
+                if request == 'Баллы квеста':
+                    score = get_user_data(event.user_id, "score")
+                    score = int(score) if int(score) == score else score
+                    message = f'У тебя {score} баллов, шик'
+                    write_msg(event.user_id, message, 'default.json')
+                elif request == 'Задать вопросы':
+                    write_msg(event.user_id, 'Что хочешь узнать?', 'questions.json')
+                else:
+                    write_msg(event.user_id, f'Иди на хуй со своим "{request}", сука!', 'default.json')
