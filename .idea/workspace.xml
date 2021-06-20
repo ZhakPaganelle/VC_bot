@@ -2,10 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="443ef126-d14b-4285-9090-2920bbea69ee" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/admins.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/keyboards/12.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/keyboards/23.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/bot_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/bot_main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/quest.csv" beforeDir="false" afterPath="$PROJECT_DIR$/quest.csv" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,10 +41,11 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/keyboards" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Me\Documents\GitHub\VC_bot\keyboards" />
       <recent name="C:\Users\Me\Documents\GitHub\VC_bot" />
     </key>
     <key name="MoveFile.RECENT_KEYS">

@@ -25,8 +25,15 @@ users = pandas.read_csv('users.csv', index_col='user_id')
 quest = pandas.read_csv('quest.csv', index_col='step_id')
 # DB structure: step_id, task, answer, score
 
+admins = pandas.read_csv('admins.csv', index_col='admin_id')
+# DB structure: admin_id, last checked user
+
 
 # Working with db
+def namestr(obj, namespace):
+    return [name for name in namespace if namespace[name] is obj]
+
+
 def check_user(user_id):
     '''
     Checks if user is in the BD
@@ -38,59 +45,51 @@ def check_user(user_id):
     if user_id not in set(users.index):
         new_user = [1, 0, 0, 'course']
         users.loc[user_id, :] = new_user
-        print(users)
         users.to_csv('users.csv', encoding='utf-8')
 
     return users
 
 
-def get_user_data(user_id, field):
+def get_data(db, row, field):
     '''
-    Returns field in given user row
-    :param user_id:
+    Returns field in given row
+
+    :param db:
+    :param row:
     :param field:
     :return:
     '''
-    return users.loc[user_id, field]
+
+    return db.loc[row, field]
 
 
-def change_user_data(user_id, field, value):
+def change_data(db, row, field, value):
     '''
     Changes field value to value param
-    :param user_id:
+    :param db:
+    :param row:
     :param field:
     :param value:
     :return:
     '''
-    users.loc[user_id, field] = value
-    users.to_csv('users.csv', encoding='utf-8')
+    db.loc[row, field] = value
+    db.to_csv(f'{namestr(db, globals())[0]}.csv', encoding='utf-8')
 
-    return users
+    return db
 
 
-def increase_value(user_id, field, delta):
+def increase_value(db, row, field, delta):
     '''
     Increases field param by delta
-    :param user_id:
     :param field:
     :param delta:
     :return:
     '''
-    current_value = get_user_data(user_id, field)
+    current_value = get_data(db, row, field)
     new_value = current_value + delta
-    change_user_data(user_id, field, new_value)
+    change_data(db, row, field, new_value)
 
     return users
-
-
-def get_quest_data(step_id, field):
-    '''
-    Returns value of the field in quest
-    :param step_id:
-    :param field:
-    :return:
-    '''
-    return quest.loc[step_id, field]
 
 
 # Working with vk api
@@ -123,7 +122,9 @@ def check_subscription(user_id, group_id):
 
 def get_id(link):
     link = link.split('/')[-1]
-    print(vk.method('users.get', {'user_ids': link, 'fields': 'uid'}))
+    data = vk.method('users.get', {'user_ids': link, 'fields': 'uid'})
+
+    return data[0]['id']
 
 
 def send_task(user_id):
@@ -132,9 +133,8 @@ def send_task(user_id):
     :param user_id:
     :return:
     '''
-    step = get_user_data(user_id, 'step')
-    task = get_quest_data(step, 'task')
-    print(quest)
+    step = get_data(users, user_id, 'step')
+    task = get_data(quest, step, 'task')
     write_msg(user_id, task, 'quest.json')
 
 
@@ -145,7 +145,7 @@ def check_answer(user_id, request):
     :param request:
     :return:
     '''
-    return request.lower() == quest.iloc[int(get_user_data(user_id, 'step'))]['answer'].lower()
+    return request.lower() == quest.iloc[int(get_data(users, user_id, 'step'))]['answer'].lower()
 
 
 def check_end(user_id):
@@ -154,7 +154,7 @@ def check_end(user_id):
     :param user_id:
     :return:
     '''
-    step = get_user_data(user_id, 'step')
+    step = get_data(users, user_id, 'step')
     if step == len(quest):
         return True
     return False
@@ -166,34 +166,70 @@ for event in longpoll.listen():
             users = check_user(event.user_id)
             request = event.text
 
-            if request in ('Меню', 'Назад') or request.lower().startswith('привет'):  # Calls usual menu
-                users = change_user_data(event.user_id, 'bot_answers', 1)
+            if str(event.user_id) in ADMIN_IDS and request.startswith('http') or len(request) == 1:
+                # try:  # Uncomment when deploy
+                if request.startswith('http'):
+                    user_id = get_id(request)
+                    change_data(admins, event.user_id, 'last_user_checked', user_id)
+
+                    user_step = get_data(users, user_id, 'step'),
+                    if (value := int(get_data(quest, user_step, 'score'))) < 10:
+                        increase_value(users, user_id, 'step', 1)
+                        increase_value(users, user_id, 'score', value)
+
+                        if not check_end(user_id):
+                            write_msg(user_id, 'Красава')
+                            user_step = get_data(users, user_id, 'step')
+                            write_msg(user_id, get_data(quest, user_step, 'task'), 'quest.json')
+                        else:
+                            score = get_data(users, event.user_id, 'score')
+                            write_msg(event.user_id, f'Красава, всё пройдено \nУ тебя {score} баллов', 'default.json')
+                    else:
+                        value = str(value)
+                        print(value)
+                        write_msg(event.user_id, 'Сколько начислять?', f'{value}.json')
+
+                elif len(request) == 1:
+                    user_id = get_data(admins, event.user_id, 'last_user_checked')
+                    increase_value(users, user_id, 'step', 1)
+                    increase_value(users, user_id, 'score', int(request))
+                    if not check_end(user_id):
+                        write_msg(user_id, 'Красава')
+                        user_step = get_data(users, user_id, 'step')
+                        write_msg(user_id, get_data(quest, user_step, 'task'), 'quest.json')
+                    else:
+                        score = get_data(users, event.user_id, 'score')
+                        score = int(score) if int(score) == score else score
+                        write_msg(event.user_id, f'Красава, всё пройдено \nУ тебя {score} баллов', 'default.json')
+                # except:
+                #     pass
+
+            elif request in ('Меню', 'Назад') or request.lower().startswith('привет'):  # Calls usual menu
+                users = change_data(users, event.user_id, 'bot_answers', 1)
                 write_msg(event.user_id, 'Чего изволите?', 'default.json')
 
             elif request == 'Поговорить с человеком':  # Stops bot responses
-                users = change_user_data(event.user_id, 'bot_answers', 0)
+                users = change_data(users, event.user_id, 'bot_answers', 0)
                 write_msg(event.user_id, 'Мы ответим КТТС', 'menu_call.json')
 
             elif request in QUESTIONS.keys():  # For Ruslan
                 write_msg(event.user_id, QUESTIONS[request])
 
-            elif request.startswith('http'):
-                get_id(request)
-
-            elif get_user_data(event.user_id, 'bot_answers'):  # Usual response
+            elif get_data(users, event.user_id, 'bot_answers'):  # Usual response
                 if request in ('Квест', 'Текущее задание', 'Следующее задание'):
                     if not check_subscription(event.user_id, GROUP_ID):  # Checking if user is subscribed
                         message = 'Чтобы выполнять квест, подпишись на нашу группу'
                         write_msg(event.user_id, message, 'default.json')
                     elif check_end(event.user_id):  # Check if quest is already passed
-                        score = get_user_data(event.user_id, "score")
+                        score = get_data(users, event.user_id, "score")
+                        score = int(score) if int(score) == score else score
                         message = f'Ты уже выполнил наш квест \nТы набрал {score} баллов'
                         write_msg(event.user_id, message, 'default.json')
                     else:
                         send_task(event.user_id)  # Just sending the task
 
                 elif request == 'Баллы квеста':  # Returns quest score
-                    score = get_user_data(event.user_id, "score")
+                    score = get_data(users, event.user_id, "score")
                     score = int(score) if int(score) == score else score
                     message = f'У тебя {score} баллов, шик'
                     write_msg(event.user_id, message, 'default.json')
@@ -205,20 +241,20 @@ for event in longpoll.listen():
                     num = request[-1]
                     write_msg(event.user_id, 'Что хочешь узнать?', f'questions{num}.json')
 
-                elif check_answer(event.user_id, request):
-                    score_delta = get_quest_data(get_user_data(event.user_id, 'step'), 'score')
-                    users = increase_value(event.user_id, 'score', score_delta)
-
-                    specials = {'15': 22}
-
-                    if str(request) in specials:
-                        users = change_user_data(event.user_id, 'step', specials[str(request)])
-                    else:
-                        users = increase_value(users, event.user_id, 'step', 1)
-
-                    if check_end(event.user_id):
-                        score = get_user_data(event.user_id, 'score')
-                        write_msg(event.user_id, f'Красава, всё прошёл \nУ тебя {score} баллов', 'default.json')
-
-                else:
-                    write_msg(event.user_id, f'Иди на хуй со своим "{request}", сука!', 'default.json')
+                # elif check_answer(event.user_id, request):
+                #     score_delta = get_data(quest, get_data(users, event.user_id, 'step'), 'score')
+                #     users = increase_value(users, event.user_id, 'score', score_delta)
+                #
+                #     specials = {'15': 22}
+                #
+                #     if str(request) in specials:
+                #         users = change_data(users, event.user_id, 'step', specials[str(request)])
+                #     else:
+                #         users = increase_value(users, event.user_id, 'step', 1)
+                #
+                #     if check_end(event.user_id):
+                #         score = get_data(users, event.user_id, 'score')
+                #         write_msg(event.user_id, f'Красава, всё прошёл \nУ тебя {score} баллов', 'default.json')
+                #
+                # else:
+                #     write_msg(event.user_id, f'Иди на хуй со своим "{request}", сука!', 'default.json')
