@@ -1,5 +1,9 @@
+from db import *
+from random import randint
+
+
 # Working with vk api
-def write_msg(user_id, message, keyboard_file=None):
+def write_msg(vk, user_id, message, keyboard_file=None):
     '''
     Sends message to user
 
@@ -15,7 +19,7 @@ def write_msg(user_id, message, keyboard_file=None):
     vk.method('messages.send', params)
 
 
-def check_subscription(user_id, group_id):
+def check_subscription(vk, user_id, group_id):
     '''
     Checks if user is subscribed to given group
 
@@ -26,34 +30,39 @@ def check_subscription(user_id, group_id):
     return vk.method('groups.isMember', {'group_id': group_id, 'user_id': user_id})
 
 
-def send_task(user_id):
+def get_id(vk, link):
+    link = link.split('/')[-1]
+    print(vk.method('users.get', {'user_ids': link, 'fields': 'uid'}))
+
+
+def send_task(vk, users, user_id):
     '''
     Sends current quest task to the given user
     :param user_id:
     :return:
     '''
-    step = get_user_data(user_id, 'step')
-    task = get_quest_data(step, 'task')
-    write_msg(event.user_id, task, 'quest.json')
+    step = get_user_data(users, user_id, 'step')
+    task = get_quest_data(users, step, 'task')
+    write_msg(vk, user_id, task, 'quest.json')
 
 
-def check_answer(user_id, request):
+def check_answer(users, quest, user_id, request):
     '''
     Checks if user message is the same as the right answer
     :param user_id:
     :param request:
     :return:
     '''
-    return request.lower() == quest.iloc[int(get_user_data(user_id, 'step'))]['answer'].lower()
+    return request.lower() == quest.iloc[int(get_user_data(users, user_id, 'step'))]['answer'].lower()
 
 
-def check_end(user_id):
+def check_end(users, quest, user_id):
     '''
     Checks if user already completed the quest
     :param user_id:
     :return:
     '''
-    step = get_user_data(user_id, 'step')
+    step = get_user_data(users, user_id, 'step')
     if step == len(quest):
         return True
     return False
