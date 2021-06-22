@@ -22,11 +22,15 @@ longpoll = VkLongPoll(vk)
 users = pandas.read_csv('users.csv', index_col='user_id')
 # DB structure: user_id, bot_answers, score, step, way
 
-quest = pandas.read_csv('quest.csv', index_col='step_id')
+quest = pandas.read_csv('quest.csv', index_col='step_id', sep=';')
 # DB structure: step_id, task, answer, score
 
 admins = pandas.read_csv('admins.csv', index_col='admin_id')
 # DB structure: admin_id, last checked user
+
+subscribe_message = '''Как я вижу, ты заинтересовался доброквестом, но, видимо, ты не подписан на нашу группу вк… У нас не получится наладить контакт, если ты не будешь подписан…
+Возвращайся когда выполнишь это задание!
+'''
 
 
 # Working with db
@@ -73,7 +77,8 @@ def change_data(db, row, field, value):
     :return:
     '''
     db.loc[row, field] = value
-    db.to_csv(f'{namestr(db, globals())[0]}.csv', encoding='utf-8')
+    sep = ';' if db is quest else ','
+    db.to_csv(f'{namestr(db, globals())[0]}.csv', encoding='utf-8', sep=sep)
 
     return db
 
@@ -134,7 +139,7 @@ def send_task(user_id):
     :return:
     '''
     step = get_data(users, user_id, 'step')
-    task = get_data(quest, step, 'task')
+    task = get_data(quest, step, 'task').replace('!?!', '\n')
     write_msg(user_id, task, 'quest.json')
 
 
@@ -180,13 +185,12 @@ for event in longpoll.listen():
                         if not check_end(user_id):
                             write_msg(user_id, 'Красава')
                             user_step = get_data(users, user_id, 'step')
-                            write_msg(user_id, get_data(quest, user_step, 'task'), 'quest.json')
+                            send_task(user_id)
                         else:
                             score = get_data(users, event.user_id, 'score')
                             write_msg(event.user_id, f'Красава, всё пройдено \nУ тебя {score} баллов', 'default.json')
                     else:
                         value = str(value)
-                        print(value)
                         write_msg(event.user_id, 'Сколько начислять?', f'{value}.json')
 
                 elif len(request) == 1:
@@ -196,7 +200,7 @@ for event in longpoll.listen():
                     if not check_end(user_id):
                         write_msg(user_id, 'Красава')
                         user_step = get_data(users, user_id, 'step')
-                        write_msg(user_id, get_data(quest, user_step, 'task'), 'quest.json')
+                        send_task(user_id)
                     else:
                         score = get_data(users, event.user_id, 'score')
                         score = int(score) if int(score) == score else score
@@ -218,8 +222,7 @@ for event in longpoll.listen():
             elif get_data(users, event.user_id, 'bot_answers'):  # Usual response
                 if request in ('Квест', 'Текущее задание', 'Следующее задание'):
                     if not check_subscription(event.user_id, GROUP_ID):  # Checking if user is subscribed
-                        message = 'Чтобы выполнять квест, подпишись на нашу группу'
-                        write_msg(event.user_id, message, 'default.json')
+                        write_msg(event.user_id, subscribe_message, 'default.json')
                     elif check_end(event.user_id):  # Check if quest is already passed
                         score = get_data(users, event.user_id, "score")
                         score = int(score) if int(score) == score else score
