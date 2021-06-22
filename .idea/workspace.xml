@@ -2,12 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="443ef126-d14b-4285-9090-2920bbea69ee" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/admins.csv" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/keyboards/12.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/keyboards/23.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/VC_bot.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/VC_bot.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/csv-plugin.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/csv-plugin.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bot_main.py" beforeDir="false" afterPath="$PROJECT_DIR$/bot_main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/quest.csv" beforeDir="false" afterPath="$PROJECT_DIR$/quest.csv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/questions_list.py" beforeDir="false" afterPath="$PROJECT_DIR$/questions_list.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -41,7 +42,8 @@
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/keyboards" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../venv386/pyvenv.cfg" />
+    <property name="settings.editor.selected.configurable" value="RainbowCSV.Settings" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -83,7 +85,7 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="a66d3615-7027-4acd-8369-329b73b85280" name="Default Changelist" comment="" />
+      <changelist id="443ef126-d14b-4285-9090-2920bbea69ee" name="Default Changelist" comment="" />
       <created>1623735581636</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
