@@ -4,14 +4,14 @@
     [{
       "action": {
       "type": "text",
-      "label": "2"
+      "label": "4"
       },
       "color": "default"
     }],
     [{
       "action": {
       "type": "text",
-      "label": "3"
+      "label": "8"
       },
       "color": "default"
     }]

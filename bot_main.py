@@ -1,3 +1,5 @@
+import random
+
 import vk_api
 
 import constants   # This file is ignored by git
@@ -101,9 +103,9 @@ for event in longpoll.listen():
                     admins_dict[event.user_id].change_last_checked(user_id)
 
                     current_user = users_dict[user_id]
-                    if (value := quest_list[current_user.step].score) < 10:  # If no score choice
+                    if (value := quest_list[current_user.step].score) <= 10:  # If no score choice
+                        current_user.change_score(quest_list[current_user.step].score)
                         current_user.change_step()
-                        current_user.change_score()
 
                         if not check_end(current_user.user_id):  # Send next task to user
                                                     # TODO: make a function
@@ -118,9 +120,9 @@ for event in longpoll.listen():
                         write_msg(event.user_id, 'Сколько начислять?', f'{value}.json')
 
                 elif len(request) == 1 and request.isnumeric():
-                    current_user = admins_dict[event.user_id].last_checked
+                    current_user = users_dict[admins_dict[event.user_id].last_checked]
                     current_user.change_step()
-                    current_user.change_score()
+                    current_user.change_score(int(request))
 
                     user_id = current_user.user_id
                     if not check_end(user_id):
