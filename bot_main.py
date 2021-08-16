@@ -1,6 +1,7 @@
+import json
 import random
-
 import vk_api
+import requests
 
 import constants   # This file is ignored by git
                    # It contains token and group id
@@ -16,6 +17,7 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 # Constants and preparations
 TOKEN = constants.token
 GROUP_ID = constants.group_id
+SERVICE_KEY = constants.service_key
 QUESTIONS = questions_list.questions
 subscribe_message = constants.subscribe_message
 
@@ -78,17 +80,70 @@ def check_answer(user_id, request):
     '''
     step = users_dict[user_id].step
     question = quest_list[step]
-    return request.lower() == question.answer.lower()
+    if question.answer:
+        return request.lower() == question.answer.lower()
+    return False
 
 
 def check_end(user_id):
-    '''
+    """
     Checks if user already completed the quest
     :param user_id:
     :return:
-    '''
+    """
     step = users_dict[user_id].step
     return step == len(quest_list)
+
+
+def next_task(current_user):
+    user_id = current_user.user_id
+    if not check_end(user_id):
+        write_msg(user_id, 'Красава')
+        send_task(user_id)
+    else:
+        score = current_user.score
+        score = int(score) if int(score) == score else score  # TODO: Use this
+        write_msg(user_id, f'Красава, всё пройдено \nУ тебя {score} баллов', 'default.json')
+
+
+def get_posts(community_id):
+    params = {
+        'owner_id': f'-{community_id}',
+        'domain': f'https://vk.com/club{community_id}',
+        'access_token': SERVICE_KEY,
+        'v': 5.131
+    }
+    url = 'https://api.vk.com/method/wall.get'
+    r = requests.get(url=url, params=params)
+    posts = json.loads(r.text)['response']['items']
+    return [post['id'] for post in posts]
+
+
+def get_likes(community_id, post_id):
+    params = {
+        'type': 'post',
+        'owner_id': f'-{community_id}',
+        'item_id': post_id,
+        'access_token': SERVICE_KEY,
+        'v': 5.131
+    }
+    url = 'https://api.vk.com/method/likes.getList'
+    r = requests.get(url=url, params=params)
+    return json.loads(r.text)['response']['items']
+
+
+def get_users_liked(community_id):
+    users_liked = []
+    posts_ids = get_posts(community_id)
+    for post_id in posts_ids:
+        users_liked.extend(get_likes(community_id, post_id))
+    return users_liked
+
+
+def check_likes(user):
+    user_id = user.user_id
+    likes = get_users_liked(GROUP_ID)
+    return likes.count(user_id)
 
 
 for event in longpoll.listen():
@@ -107,14 +162,7 @@ for event in longpoll.listen():
                         current_user.change_score(quest_list[current_user.step].score)
                         current_user.change_step()
 
-                        if not check_end(current_user.user_id):  # Send next task to user
-                                                    # TODO: make a function
-                            write_msg(user_id, 'Красава')  # Change on deploy
-                            send_task(user_id)
-                        else:
-                            score = current_user.score
-                            score = int(score) if int(score) == score else score  # TODO: Use this
-                            write_msg(user_id, f'Красава, всё пройдено \nУ тебя {score} баллов', 'default.json')
+                        next_task(current_user)
                     else:
                         value = str(value)
                         write_msg(event.user_id, 'Сколько начислять?', f'{value}.json')
@@ -124,27 +172,29 @@ for event in longpoll.listen():
                     current_user.change_step()
                     current_user.change_score(int(request))
 
-                    user_id = current_user.user_id
-                    if not check_end(user_id):
-                        write_msg(user_id, 'Красава')
-                        send_task(user_id)
-                    else:
-                        score = current_user.score
-                        score = int(score) if int(score) == score else score  # TODO: Use this
-                        write_msg(user_id, f'Красава, всё пройдено \nУ тебя {score} баллов', 'default.json')
+                    next_task(current_user)
 
             user_id = event.user_id
             current_user = users_dict[user_id]
+            if current_user.step == 1:
+                if check_likes(current_user) >= 1:
+                    current_user.change_score(quest_list[current_user.step].score)
+                    current_user.change_step()
 
-            if request in ('Меню', 'Назад') or request.lower().startswith('привет'):  # Calls usual menu
+                    next_task(current_user)
+                else:
+                    print(check_likes(current_user))
+
+            elif check_answer(user_id, request):
+                current_user.change_score(quest_list[current_user.step].score)
+                current_user.change_step()
+
+                next_task(current_user)
+
+            elif request in ('Меню', 'Назад') or request.lower().startswith('привет'):  # Calls usual menu
                 write_msg(user_id, 'Чего изволите?', 'default.json')
 
-            # elif request == 'Поговорить с человеком':  # Stops bot responses
-            #     users = change_data(users, event.user_id, 'bot_answers', 0)
-            #     write_msg(event.user_id, 'Мы ответим КТТС', 'menu_call.json')
-
-            # elif get_data(users, event.user_id, 'bot_answers'):  # Usual response
-            if request in ('Квест', 'Текущее задание', 'Следующее задание'):
+            elif request in ('Квест', 'Текущее задание', 'Следующее задание'):
                 if not check_subscription(user_id, GROUP_ID):  # Checking if user is subscribed
                     write_msg(user_id, subscribe_message, 'default.json')
                 elif check_end(user_id):  # Check if quest is already passed
