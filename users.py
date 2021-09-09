@@ -95,7 +95,7 @@ def check_user(user_id):
         users.to_csv('users.csv', encoding='utf-8')
         users, users_dict = renew_users()
 
-    return users
+    return users, users_dict
 
 
 users, users_dict = renew_users()

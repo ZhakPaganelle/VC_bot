@@ -14,13 +14,6 @@
       "label": "Задать вопросы"
       },
       "color": "default"
-    }],
-    [{
-      "action": {
-      "type": "text",
-      "label": "Поговорить с человеком"
-      },
-      "color": "default"
     }]
   ]
 }

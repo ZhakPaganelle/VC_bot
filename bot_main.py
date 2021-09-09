@@ -26,19 +26,22 @@ longpoll = VkLongPoll(vk)
 
 
 # Working with vk api
-def write_msg(user_id, message, keyboard_file=None):
-    '''
+def write_msg(user_id, message, keyboard_file=None, attachment=None):
+    """
     Sends message to user
 
     :param user_id:
     :param message:
     :param keyboard_file: Bottom keyboard
+    :param attachment:
     :return: No return
-    '''
+    """
     params = {'user_id': user_id, 'message': message, 'random_id': randint(10**5, 10**6)}
     if keyboard_file:
         keyboard = open(f'keyboards/{keyboard_file}', encoding='utf-8').read()
         params['keyboard'] = keyboard
+    if attachment:
+        params['attachment'] = attachment
     vk.method('messages.send', params)
 
 
@@ -67,8 +70,13 @@ def send_task(user_id):
     :return:
     '''
     step = users_dict[user_id].step
+    attacment_dict = {
+        2: 'photo-194815411_457239018',
+        3: 'photo-194815411_457239019,photo-194815411_457239020'
+    }
+    attachment = attacment_dict[step] if step in attacment_dict else None
     task = quest_list[step].text
-    write_msg(user_id, task, 'quest.json')
+    write_msg(user_id, task, 'quest.json', attachment)
 
 
 def check_answer(user_id, request):
@@ -149,7 +157,7 @@ def check_likes(user):
 for event in longpoll.listen():
     if event.type == VkEventType.MESSAGE_NEW:
         if event.to_me:
-            users = check_user(event.user_id)
+            users, users_dict = check_user(event.user_id)
             request = event.text
 
             if event.user_id in admins_dict.keys():
@@ -163,6 +171,7 @@ for event in longpoll.listen():
                         current_user.change_step()
 
                         next_task(current_user)
+                        write_msg(event.user_id, 'Готово')
                     else:
                         value = str(value)
                         write_msg(event.user_id, 'Сколько начислять?', f'{value}.json')
@@ -173,6 +182,7 @@ for event in longpoll.listen():
                     current_user.change_score(int(request))
 
                     next_task(current_user)
+                    write_msg(event.user_id, 'Готово')
 
             user_id = event.user_id
             current_user = users_dict[user_id]
@@ -191,7 +201,7 @@ for event in longpoll.listen():
 
                 next_task(current_user)
 
-            elif request in ('Меню', 'Назад') or request.lower().startswith('привет'):  # Calls usual menu
+            elif request in ('Привет', 'Меню', 'Назад') or request.lower().startswith('привет'):  # Calls usual menu
                 write_msg(user_id, 'Чего изволите?', 'default.json')
 
             elif request in ('Квест', 'Текущее задание', 'Следующее задание'):
@@ -205,7 +215,7 @@ for event in longpoll.listen():
                 else:
                     send_task(user_id)  # Just sending the task
 
-            elif request == 'Баллы квеста':  # Returns quest score
+            elif request == 'Баллы':  # Returns quest score
                 score = current_user.score
                 score = int(score) if int(score) == score else score
                 message = f'У тебя {score} баллов, шик'

@@ -4,6 +4,13 @@
     [{
       "action": {
       "type": "text",
+      "label": "Готово"
+      },
+      "color": "default"
+    }],
+    [{
+      "action": {
+      "type": "text",
       "label": "Текущее задание"
       },
       "color": "default"
