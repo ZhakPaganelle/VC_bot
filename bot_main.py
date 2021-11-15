@@ -74,9 +74,13 @@ def send_task(user_id):
         2: 'photo-194815411_457239018',
         3: 'photo-194815411_457239019,photo-194815411_457239020'
     }
+    keyboard_dict = {
+        0: 'start.json'
+    }
     attachment = attacment_dict[step] if step in attacment_dict else None
     task = quest_list[step].text
-    write_msg(user_id, task, 'quest.json', attachment)
+    keyboard = keyboard_dict[step] if step in keyboard_dict else 'quest.json'
+    write_msg(user_id, task, keyboard, attachment)
 
 
 def check_answer(user_id, request):
@@ -110,8 +114,47 @@ def next_task(current_user):
         send_task(user_id)
     else:
         score = current_user.score
-        score = int(score) if int(score) == score else score  # TODO: Use this
+        score = int(score) if int(score) == score else score
         write_msg(user_id, f'Красава, всё пройдено \nУ тебя {score} баллов', 'default.json')
+
+
+def delay(user):
+    delayed = object.__getattribute__(user, 'delayed')
+    step = user.step
+    delayed = str(delayed) + f'|{step}'
+    user.change_step(new_step=step + 1, delay=True)
+    user.delayed = delayed
+    print(delayed, user.delayed)
+    update_db(users, user.user_id, 'delayed', object.__getattribute__(user, 'delayed'))
+    send_task(user.user_id)
+
+
+def show_delayed(user) -> None:
+    delayed = [quest_list[i].title for i in user.delayed]
+    keyboard = form_delayed_keyboard(user.delayed)
+    write_msg(user.user_id, '\n'.join(delayed), 'delayed.json')
+
+
+def form_delayed_keyboard(delayed: list) -> None:
+    template = """[{
+      "action": {
+      "type": "text",
+      "label": "№ {0} {1}"
+      },
+      "color": "default"
+    }],"""
+    start = '''{
+  "one_time": false,
+  "buttons": [
+  '''
+    end = ''']
+}'''
+    print(template.format(quest_list[2].step, quest_list[2].title))
+    body = [template.format(quest_list[i].step, quest_list[i].title) for i in delayed]
+    print(body)
+    contents = start + '\n'.join(body) + end
+    with open('./keyboards/delayed.json', 'w') as file:
+        file.write(contents)
 
 
 def get_posts(community_id):
@@ -157,6 +200,7 @@ def check_likes(user):
 for event in longpoll.listen():
     if event.type == VkEventType.MESSAGE_NEW:
         if event.to_me:
+            print(event.text)
             users, users_dict = check_user(event.user_id)
             request = event.text
 
@@ -219,7 +263,13 @@ for event in longpoll.listen():
                 score = current_user.score
                 score = int(score) if int(score) == score else score
                 message = f'У тебя {score} баллов, шик'
-                write_msg(user_id, message, 'default.json')
+                write_msg(user_id, message, 'quest.json')
+
+            elif request == 'Отложить':
+                delay(current_user)
+
+            elif request == 'Отложенные':
+                show_delayed(current_user)
 
             # FAQ block
             elif request == 'Задать вопросы':
@@ -228,6 +278,13 @@ for event in longpoll.listen():
             elif request.startswith('Страница '):
                 num = request[-1]
                 write_msg(user_id, 'Что хочешь узнать?', f'questions{num}.json')
+
+            elif request == 'Погнали' and current_user.step == 0:
+                current_user.completed = '0'
+                current_user.change_step()
+                current_user.change_score(1)
+
+                next_task(current_user)
 
             elif request in QUESTIONS.keys():  # For Ruslan
                 write_msg(user_id, QUESTIONS[request])

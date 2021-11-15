@@ -22,6 +22,20 @@
       },
       "color": "default"
     }],
+    [{
+      "action": {
+      "type": "text",
+      "label": "Отложить"
+      },
+      "color": "default"
+    }],
+    [{
+      "action": {
+      "type": "text",
+      "label": "Отложенные"
+      },
+      "color": "default"
+    }],
       [{
         "action": {
         "type": "text",
