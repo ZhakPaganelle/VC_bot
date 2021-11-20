@@ -3,6 +3,8 @@ import random
 import vk_api
 import requests
 
+import sqlite3 as sl
+
 import constants   # This file is ignored by git
                    # It contains token and group id
 
@@ -24,6 +26,7 @@ subscribe_message = constants.subscribe_message
 vk = vk_api.VkApi(token=TOKEN)
 longpoll = VkLongPoll(vk)
 
+con = sl.connect('bot.db')
 
 # Working with vk api
 def write_msg(user_id, message, keyboard_file=None, attachment=None):
@@ -107,19 +110,27 @@ def check_end(user_id):
     return step == len(quest_list)
 
 
-def next_task(current_user):
-    user_id = current_user.user_id
+def next_task(user_id):
     if not check_end(user_id):
         write_msg(user_id, 'Красава')
         send_task(user_id)
     else:
-        score = current_user.score
-        score = int(score) if int(score) == score else score
+        with con:
+            score = con.execute(f"""
+                    SELECT score FROM VCUSERS
+                    WHERE user_id = {user_id};
+                """)
+            score = list(score)[0][0]
         write_msg(user_id, f'Красава, всё пройдено \nУ тебя {score} баллов', 'default.json')
 
 
-def delay(user):
-    delayed = object.__getattribute__(user, 'delayed')
+# TODO: Refactor
+def delay(user_id):
+    with con:
+        data = con.execute(f"""
+                SELECT score FROM VCUSERS
+                WHERE user_id = {user_id};
+            """)
     step = user.step
     delayed = str(delayed) + f'|{step}'
     user.change_step(new_step=step + 1, delay=True)
@@ -129,12 +140,13 @@ def delay(user):
     send_task(user.user_id)
 
 
-def show_delayed(user) -> None:
-    delayed = [quest_list[i].title for i in user.delayed]
-    keyboard = form_delayed_keyboard(user.delayed)
-    write_msg(user.user_id, '\n'.join(delayed), 'delayed.json')
+# TODO: Refactor
+def show_delayed(user_id) -> None:
+    delayed = [quest_list[i].title for i in delayed]
+    keyboard = form_delayed_keyboard(delayed)
+    write_msg(user_id, '\n'.join(delayed), 'delayed.json')
 
-
+# TODO: Refactor
 def form_delayed_keyboard(delayed: list) -> None:
     template = """[{
       "action": {
@@ -191,17 +203,16 @@ def get_users_liked(community_id):
     return users_liked
 
 
-def check_likes(user):
-    user_id = user.user_id
+def check_likes(user_id):
     likes = get_users_liked(GROUP_ID)
     return likes.count(user_id)
 
-
+# TODO: Refactor
 for event in longpoll.listen():
     if event.type == VkEventType.MESSAGE_NEW:
         if event.to_me:
             print(event.text)
-            users, users_dict = check_user(event.user_id)
+#             users, users_dict = check_user(event.user_id)
             request = event.text
 
             if event.user_id in admins_dict.keys():
